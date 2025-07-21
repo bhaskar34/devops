@@ -1,35 +1,20 @@
-name: Deploy to AWS S3
+version: 0.2
 
-on:
-  push:
-    branches:
-      - main  # Change if your main branch has a different name
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - npm install
+  build:
+    commands:
+      - npm run build
+  post_build:
+    commands:
+      - echo "Build complete. Syncing to S3..."
+      - aws s3 sync dist/ s3://this-is-devops-bucket --delete
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: npm install
-        working-directory: devops/simple
-
-      - name: Build the project
-        run: npm run build
-        working-directory: devops/simple
-
-      - name: Deploy to S3
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ap-south-1  # change as per your bucket region
-        run: |
-          aws s3 sync devops/simple/dist/ s3://your-s3-bucket-name --delete
+artifacts:
+  files:
+    - '**/*'
+  base-directory: dist
